@@ -1,3 +1,7 @@
+**This repository: minor tweaks to upstream, including font size, etc.**
+
+To Test changes: use ``make build && make && cp -r Flat* ~/.themes/``
+
 ![Flat Remix GNOME theme](https://github.com/daniruiz/flat-remix-gnome/raw/master/assets/logo.png)
 ===============================
 
