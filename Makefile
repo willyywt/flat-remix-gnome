@@ -2,11 +2,13 @@ PKGNAME = flat-remix-gnome
 MAINTAINER = Daniel Ruiz de Alegría <daniel@drasite.com>
 UBUNTU_RELEASE = impish
 PREFIX ?= /usr
-THEMES ?= $(patsubst %/index.theme,%,$(wildcard */index.theme))
-BASE_THEME ?= Flat-Remix-Blue
+THEMES ?= $(patsubst themes/%/,%,$(wildcard themes/*/))
+BASE_THEME ?= Flat-Remix-Blue-Light
 BLUR ?= 6
 IS_UBUNTU ?= $(shell echo "$$(lsb_release -si 2> /dev/null)" | grep -q 'Ubuntu\|Pop' && echo true)
 USER_HOME ?= $(shell eval echo ~$$SUDO_USER)
+
+include src/Makefile.inc
 
 # !! Patch for pamac
 # Pamac installs packages as root, no 'sudo' (due to pkexec), so dconf is unable
@@ -43,21 +45,21 @@ build:
 install:
 ifeq ($(DESTDIR),)
 	mkdir -p $(PREFIX)/share/themes/
-	cp -r $(THEMES) $(PREFIX)/share/themes/
+	cp -a $(foreach theme,$(THEMES),themes/$(theme)) $(DESTDIR)$(PREFIX)/share/themes
 	cp -r share/ $(PREFIX)/
 	glib-compile-schemas $(PREFIX)/share/glib-2.0/schemas/
 	mkdir -p $(PREFIX)/share/gnome-shell/theme/
 	@ln -sfv $(PREFIX)/share/themes/$(BASE_THEME)/gnome-shell/ $(PREFIX)/share/gnome-shell/theme/$(BASE_THEME)
     ifeq ($(IS_UBUNTU), true)
 		cp src/gresource/gnome-shell-theme.gresource $(PREFIX)/share/themes/$(BASE_THEME)/gnome-shell/gnome-shell-theme.gresource
-		update-alternatives --install $(PREFIX)/share/gnome-shell/gdm3-theme.gresource gdm3-theme.gresource $(PREFIX)/share/themes/$(BASE_THEME)/gnome-shell/gnome-shell-theme.gresource 100
+		update-alternatives --install $(PREFIX)/share/gnome-shell/gdm-theme.gresource gdm-theme.gresource $(PREFIX)/share/themes/$(BASE_THEME)/gnome-shell/gnome-shell-theme.gresource 100
     else
 		mv -n $(PREFIX)/share/gnome-shell/gnome-shell-theme.gresource $(PREFIX)/share/gnome-shell/gnome-shell-theme.gresource.old
 		cp -f src/gresource/gnome-shell-theme.gresource $(PREFIX)/share/gnome-shell/gnome-shell-theme.gresource
     endif
 else
 	mkdir -p $(DESTDIR)$(PREFIX)/share/$(PKGNAME)/
-	cp -a Makefile $(THEMES) src share $(DESTDIR)$(PREFIX)/share/$(PKGNAME)/
+	cp -a Makefile themes src share $(DESTDIR)$(PREFIX)/share/$(PKGNAME)/
 endif
 
 uninstall:
@@ -65,7 +67,7 @@ uninstall:
 	-rm -f $(foreach file, $(shell find share/ -type f), $(PREFIX)/$(file))
 	-rm -f $(PREFIX)/share/gnome-shell/theme/$(BASE_THEME)
 ifeq ($(IS_UBUNTU), true)
-	-update-alternatives --remove gdm3-theme.gresource $(PREFIX)/share/themes/$(BASE_THEME)/gnome-shell/gnome-shell-theme.gresource
+	-update-alternatives --remove gdm-theme.gresource $(PREFIX)/share/themes/$(BASE_THEME)/gnome-shell/gnome-shell-theme.gresource
 else
 	-mv $(PREFIX)/share/gnome-shell/gnome-shell-theme.gresource.old $(PREFIX)/share/gnome-shell/gnome-shell-theme.gresource
 endif
@@ -79,28 +81,13 @@ _get_tag:
 	@echo $(TAG)
 
 dist: _get_version
-	variants="- -Dark -Darkest -Miami -Miami-Dark"; \
-	theme_variants="- -fullPanel"; \
-	color_variants="- -Blue -Green -Red -Yellow"; \
 	count=1; \
-	for variant in $$variants; \
+	for color_variant in $(COLOR_VARIANTS) Miami; \
 	do \
-		[ "$$variant" = '-' ] && variant=''; \
-		for theme_variant in $$theme_variants; \
-		do \
-			[ "$$theme_variant" = '-' ] && theme_variant=''; \
-			files=''; \
-			for color_variant in $$color_variants; \
-			do \
-				[ "$$color_variant" = '-' ] && color_variant=''; \
-				file="Flat-Remix$${color_variant}$${variant}$${theme_variant}"; \
-				[ -d "$$file" ] && files="$$files $$file"; \
-			done; \
-			count_pretty=$$(echo "0$${count}" | tail -c 3); \
-			tar -c $$files | \
-				xz -z - > "$${count_pretty}-Flat-Remix$${variant}$${theme_variant}_$(VERSION).tar.xz"; \
-			count=$$((count+1)); \
-		done; \
+		count_pretty=$$(echo "0$${count}" | tail -c 3); \
+		(cd themes && tar -c "Flat-Remix-$${color_variant}"*) | \
+			xz -z - > "$${count_pretty}-Flat-Remix-$${color_variant}_$(VERSION).tar.xz"; \
+		count=$$((count+1)); \
 	done; \
 
 release: _get_version
@@ -112,17 +99,18 @@ release: _get_version
 	git push origin --tags
 	$(MAKE) dist
 
-aur_release: _get_version _get_tag
+aur_release: _get_version
 	cd aur; \
-	sed "s/$(TAG)/$(VERSION)/g" -i PKGBUILD .SRCINFO; \
+	sed "s/pkgver=.*/pkgver=$(VERSION)/" -i PKGBUILD; \
+	sed "s/pkgver =.*/pkgver = $(VERSION)/" -i .SRCINFO; \
 	git commit -a -m "$(VERSION)"; \
 	git push origin master;
 
 	git commit aur -m "Update aur version $(VERSION)"
 	git push origin master
 
-copr_release: _get_version _get_tag
-	sed "s/$(TAG)/$(VERSION)/g" -i $(PKGNAME).spec
+copr_release: _get_version
+	sed "/Version:/c Version: $(VERSION)" -i $(PKGNAME).spec
 	git commit $(PKGNAME).spec -m "Update $(PKGNAME).spec version $(VERSION)"
 	git push origin master
 
