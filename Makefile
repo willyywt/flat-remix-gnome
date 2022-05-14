@@ -19,7 +19,12 @@ ifeq ($(USER_HOME),/root)
 endif
 
 
-all: _get_login_background
+all: background build gresource
+
+gresource:
+	make -C src/gresource build
+
+background: _get_login_background
 	-if [ ! -z "$(LOGIN_BACKGROUND)" ] && [ "$(suffix $(LOGIN_BACKGROUND))" != ".xml" ] ; \
 	then \
 		if [ $(BLUR) -le 1 ] ;\
@@ -29,7 +34,6 @@ all: _get_login_background
 			convert -scale 10% -gaussian-blur 0x$(BLUR) -resize 1000% "$(LOGIN_BACKGROUND)" src/gresource/login-background ;\
 		fi; \
 	fi
-	make -C src/gresource build
 
 _get_login_background:
 	$(eval SHELL:=/bin/bash)
@@ -141,4 +145,4 @@ generate_changelog: _get_version _get_tag
 clean:
 	-make -C src clean
 
-.PHONY: all _get_login_background build install uninstall _get_version _get_tag dist release aur_release copr_release launchpad_release generate_changelog
+.PHONY: all install uninstall _get_version _get_tag dist release aur_release copr_release launchpad_release generate_changelog
