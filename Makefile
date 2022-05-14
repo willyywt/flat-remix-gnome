@@ -19,10 +19,7 @@ ifeq ($(USER_HOME),/root)
 endif
 
 
-all: background build gresource
-
-gresource:
-	make -C src/gresource build
+all: background build
 
 background: _get_login_background
 	-if [ ! -z "$(LOGIN_BACKGROUND)" ] && [ "$(suffix $(LOGIN_BACKGROUND))" != ".xml" ] ; \
