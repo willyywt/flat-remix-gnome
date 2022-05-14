@@ -1,3 +1,13 @@
+**This repository: minor tweaks to upstream, including font size, etc.**
+
+Edits: currently done in
+```
+src/sass/gnome-shell/_common-tweaks.scss
+src/sass/gnome-shell/upstream/gnome-shell-sass/_common.scss
+```
+
+To Test changes: use `make build && make && cp -r themes/Flat* ~/.themes/`
+
 ![Flat Remix GNOME theme](https://github.com/daniruiz/flat-remix-gnome/raw/master/assets/logo.png)
 ===============================
 
