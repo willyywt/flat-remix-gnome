@@ -1,8 +1,8 @@
-![Flat Remix GNOME theme](https://github.com/daniruiz/flat-remix-gnome/raw/master/assets/logo.png)
-===============================
+# Flat Remix
 
-# More information at [drasite.com/flat-remix-gnome](https://drasite.com/flat-remix-gnome)
+This is a **forked** repo, original repo see https://github.com/daniruiz/flat-remix-gnome
 
-![theme preview](https://github.com/daniruiz/flat-remix-gnome/raw/master/assets/GNOME-40.png)
-
-![theme preview](https://github.com/daniruiz/flat-remix-gnome/raw/master/assets/preview.png)
+To test changes:
+```sh
+make build && make && cp -r themes/* ~/.themes/
+```
